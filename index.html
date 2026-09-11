@@ -201,6 +201,9 @@
                     player.play();
 
                     setStatus('success', '✅ Completed!');
+                    textInput.value = '';
+                    charCounter.innerText = `0 / ${MAX_CHARS}`;
+                    charCounter.classList.remove('limit');
                     fetchHistory();
                 } else {
                     setStatus('error', '❌ Error: ' + data.error + (data.detail ? ' (' + data.detail + ')' : ''));
