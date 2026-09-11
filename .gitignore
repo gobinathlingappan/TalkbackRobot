@@ -1,0 +1,5 @@
+node_modules/
+TalkBack.env
+.env
+out.log
+err.log

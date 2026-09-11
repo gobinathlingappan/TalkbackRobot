@@ -1,0 +1,3 @@
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (2) from TalkBack.env // tip: ⌘ override existing { override: true }
+Backend running on http://localhost:3000

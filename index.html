@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech Generator</title>
+    <style>
+        :root {
+            --card: #ffffff;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 16px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 640px; margin: 0 auto; }
+        .card {
+            background: var(--card);
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        h1 { margin: 0 0 4px; font-size: 26px; }
+        .subtitle { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+        .form-group { margin-bottom: 18px; }
+        label {
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 600; margin-bottom: 6px; font-size: 14px;
+        }
+        .char-counter { font-weight: 400; color: var(--muted); font-size: 13px; }
+        .char-counter.limit { color: var(--danger); font-weight: 600; }
+        textarea, select {
+            width: 100%; padding: 12px 14px; font-size: 15px;
+            border: 1px solid var(--border); border-radius: 10px;
+            font-family: inherit; background: #f8fafc; transition: border-color .15s, box-shadow .15s;
+        }
+        textarea:focus, select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: #fff;
+        }
+        textarea { resize: vertical; }
+        .row { display: flex; gap: 14px; }
+        .row .form-group { flex: 1; }
+        button {
+            width: 100%; padding: 13px; font-size: 16px; font-weight: 600;
+            background: var(--primary); color: #fff; border: none;
+            border-radius: 10px; cursor: pointer; transition: background .15s;
+        }
+        button:hover:not(:disabled) { background: var(--primary-dark); }
+        button:disabled { background: #c7d2fe; cursor: not-allowed; }
+        .status {
+            margin-top: 16px; padding: 12px 14px; border-radius: 10px;
+            font-size: 14px; font-weight: 500; display: none; align-items: center; gap: 8px;
+        }
+        .status.show { display: flex; }
+        .status.loading { background: #eef2ff; color: var(--primary-dark); }
+        .status.success { background: #dcfce7; color: var(--success); }
+        .status.error { background: #fee2e2; color: var(--danger); }
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid #c7d2fe;
+            border-top-color: var(--primary-dark); border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result-card {
+            margin-top: 18px; padding: 16px; border-radius: 12px;
+            background: #f8fafc; border: 1px solid var(--border); display: none;
+        }
+        .result-card h3 { margin: 0 0 8px; font-size: 15px; }
+        .result-text { font-size: 15px; margin: 0 0 10px; }
+        .result-text .arrow { color: var(--primary); font-weight: 700; }
+        audio { width: 100%; margin-top: 6px; }
+        .history { margin-top: 26px; }
+        .history h2 { font-size: 18px; color: #fff; margin: 0 0 12px; }
+        .history-item {
+            background: rgba(255,255,255,.95); padding: 14px; border-radius: 12px;
+            margin-bottom: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.12);
+        }
+        .history-item .meta { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        .history-empty { color: rgba(255,255,255,.85); font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🗣️ Text to Speech Generator</h1>
+            <p class="subtitle">Type in any language, choose an output language &amp; accent, and listen.</p>
+
+            <div class="form-group">
+                <label for="text-input">
+                    Enter Text
+                    <span id="char-counter" class="char-counter">0 / 1000</span>
+                </label>
+                <textarea id="text-input" rows="4" maxlength="1000"
+                    placeholder="Type something here... (max 1000 characters)"></textarea>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="lang-select">Language</label>
+                    <select id="lang-select">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="ja">Japanese</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ta">Tamil</option>
+                        <option value="ml">Malayalam</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="accent-select">Accent</label>
+                    <select id="accent-select">
+                        <option value="us">US English</option>
+                        <option value="uk">UK English</option>
+                        <option value="au">Australian</option>
+                        <option value="in">Indian</option>
+                        <option value="ca">Canadian</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="generate-btn">Generate Audio</button>
+
+            <div id="status" class="status"></div>
+
+            <div id="result-container" class="result-card">
+                <h3>Generated Output</h3>
+                <p id="result-text" class="result-text"></p>
+                <audio id="audio-player" controls></audio>
+            </div>
+        </div>
+
+        <div class="history">
+            <h2>📜 History (Saved in Neon DB)</h2>
+            <div id="history-container"><p class="history-empty">Loading history...</p></div>
+        </div>
+    </div>
+
+    <script>
+        // Same-origin when served by the backend; falls back to localhost when opened as a file
+        const API_URL = (window.location.protocol === 'file:' ? 'http://localhost:3000' : '') + '/api';
+        const MAX_CHARS = 1000;
+
+        const textInput = document.getElementById('text-input');
+        const charCounter = document.getElementById('char-counter');
+        const statusEl = document.getElementById('status');
+
+        // Live character counter
+        textInput.addEventListener('input', () => {
+            const len = textInput.value.length;
+            charCounter.innerText = `${len} / ${MAX_CHARS}`;
+            charCounter.classList.toggle('limit', len >= MAX_CHARS);
+        });
+
+        function setStatus(type, message) {
+            statusEl.className = `status show ${type}`;
+            statusEl.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + message;
+        }
+
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const text = textInput.value;
+            const lang = document.getElementById('lang-select').value;
+            const accent = document.getElementById('accent-select').value;
+            const btn = document.getElementById('generate-btn');
+
+            if (!text.trim()) { setStatus('error', 'Please enter some text!'); return; }
+
+            btn.disabled = true;
+            btn.innerText = 'Generating...';
+            setStatus('loading', 'Generating audio...');
+
+            try {
+                const response = await fetch(`${API_URL}/generate-tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, lang, accent })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('result-text').innerHTML =
+                        `${data.originalText} <span class="arrow">→</span> ${data.translatedText} <em>(${lang})</em>`;
+                    const player = document.getElementById('audio-player');
+                    player.src = data.audioUrl;
+                    document.getElementById('result-container').style.display = 'block';
+                    player.play();
+
+                    setStatus('success', '✅ Completed!');
+                    fetchHistory();
+                } else {
+                    setStatus('error', '❌ Error: ' + data.error + (data.detail ? ' (' + data.detail + ')' : ''));
+                }
+            } catch (err) {
+                setStatus('error', '❌ Failed to connect to the backend server.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Generate Audio';
+            }
+        });
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(`${API_URL}/history`);
+                const data = await res.json();
+                const container = document.getElementById('history-container');
+
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="history-empty">No history yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(item => `
+                    <div class="history-item">
+                        <div class="meta"><strong>${item.language_code}</strong> · ${new Date(item.created_at).toLocaleString()}</div>
+                        <div>${item.input_text}</div>
+                        <audio controls src="${item.audio_url}"></audio>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('history-container').innerHTML =
+                    '<p class="history-empty">Failed to load history.</p>';
+            }
+        }
+
+        fetchHistory();
+    </script>
+</body>
+</html>

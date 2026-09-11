@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: neon-tts-project
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
