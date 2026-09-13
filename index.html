@@ -53,6 +53,89 @@
         textarea { resize: vertical; }
         .row { display: flex; gap: 14px; }
         .row .form-group { flex: 1; }
+        .toggle-group {
+            display: flex; gap: 10px; background: #eef2ff; border-radius: 12px; padding: 6px;
+            border: 1px solid #dbeafe;
+        }
+        .toggle-option {
+            flex: 1; border: none; background: transparent; color: var(--muted);
+            padding: 10px 12px; border-radius: 10px; font-weight: 600; cursor: pointer;
+        }
+        .toggle-option.active {
+            background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(99,102,241,.18);
+        }
+        .hidden { display: none !important; }
+        .record-actions {
+            display: flex; gap: 10px; align-items: center; margin-top: 12px;
+        }
+        .secondary-btn {
+            width: auto; min-width: 120px; padding: 11px 14px; font-size: 14px; border: 1px solid var(--border);
+            background: #fff; color: var(--text); border-radius: 10px; cursor: pointer;
+        }
+        .secondary-btn:hover:not(:disabled) { background: #f8fafc; }
+        .record-button {
+            display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+            min-width: 220px; min-height: 64px; padding: 18px 22px; font-size: 18px;
+            border: 3px solid transparent; border-radius: 20px; transition: all .15s ease;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+        }
+        .record-button.idle {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; border-color: #fca5a5;
+        }
+        .record-button.recording {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; border-color: #86efac;
+        }
+        .record-button .record-dot {
+            width: 18px; height: 18px; border-radius: 50%; background: #ef4444; display: inline-block; box-shadow: 0 0 0 0 rgba(239,68,68,.35);
+        }
+        .record-button.recording .record-dot {
+            background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.45); animation: recordPulse 1.2s infinite;
+        }
+        @keyframes recordPulse {
+            0% { box-shadow: 0 0 0 0 rgba(34,197,94,.45); }
+            70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+        }
+        .danger-btn {
+            background: #ef4444; color: #fff; border: none; width: auto; min-width: 120px;
+        }
+        .danger-btn:hover:not(:disabled) { background: #dc2626; }
+        .record-help {
+            margin: 10px 0 0; color: var(--muted); font-size: 13px;
+        }
+        .waveform {
+            display: flex; align-items: end; gap: 4px; height: 50px; margin: 10px 0 14px; padding: 8px 10px;
+            border: 1px solid var(--border); border-radius: 10px; background: #f8fafc;
+        }
+        .wave-bar {
+            display: block; width: 7px; border-radius: 999px; background: linear-gradient(180deg, #c7d2fe 0%, #6366f1 100%);
+            min-height: 8px; transition: height .12s ease, opacity .12s ease;
+        }
+        .mic-status {
+            display: inline-flex; align-items: center; gap: 8px; margin-top: 10px;
+            padding: 8px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+            letter-spacing: .02em; text-transform: uppercase; width: fit-content; border: 1px solid var(--border);
+        }
+        .mic-status.idle {
+            background: #f8fafc; color: var(--muted);
+        }
+        .mic-status.listening {
+            background: #dcfce7; color: var(--success); border-color: rgba(34,197,94,.2);
+        }
+        .mic-status.error {
+            background: #fee2e2; color: var(--danger); border-color: rgba(220,38,38,.15);
+        }
+        .mic-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; display: inline-block;
+        }
+        .mic-status.listening .mic-dot {
+            background: var(--success); box-shadow: 0 0 0 0 rgba(34,197,94,.5); animation: pulse 1.2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+            70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+        }
         button {
             width: 100%; padding: 13px; font-size: 16px; font-weight: 600;
             background: var(--primary); color: #fff; border: none;
@@ -99,12 +182,55 @@
             <p class="subtitle">Type in any language, choose an output language &amp; accent, and listen.</p>
 
             <div class="form-group">
+                <label for="input-mode">Input Method</label>
+                <div class="toggle-group" id="input-mode">
+                    <button type="button" class="toggle-option active" data-mode="text">Type Text</button>
+                    <button type="button" class="toggle-option" data-mode="record">Record Voice</button>
+                </div>
+            </div>
+
+            <div id="text-panel" class="form-group">
                 <label for="text-input">
                     Enter Text
                     <span id="char-counter" class="char-counter">0 / 1000</span>
                 </label>
                 <textarea id="text-input" rows="4" maxlength="1000"
                     placeholder="Type something here... (max 1000 characters)"></textarea>
+            </div>
+
+            <div id="record-panel" class="form-group hidden">
+                <label for="text-input">Voice Input</label>
+                <div class="record-actions">
+                    <button type="button" id="record-btn" class="secondary-btn record-button idle"><span class="record-dot"></span><span>Start Recording</span></button>
+                    <button type="button" id="stop-btn" class="secondary-btn danger-btn hidden">Stop</button>
+                </div>
+                <div id="record-status-label" style="margin-top:10px; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#64748b;">Silent</div>
+                <div class="waveform" id="waveform" aria-label="Microphone waveform">
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                    <span class="wave-bar" style="height: 8%; opacity: 0.25"></span>
+                </div>
+                <div id="mic-status" class="mic-status idle"><span class="mic-dot"></span><span id="mic-status-label">Mic idle</span></div>
+                <p class="record-help">Speak clearly and the transcript will appear in the text box below for conversion.</p>
+                <textarea id="voice-preview" rows="4" readonly placeholder="Your spoken text will appear here..."></textarea>
+            </div>
+
+            <div id="review-panel" class="form-group hidden">
+                <label for="review-text">Review Captured Text</label>
+                <textarea id="review-text" rows="4" placeholder="Review the captured transcript here..."></textarea>
+                <div class="record-actions" style="margin-top: 12px;">
+                    <button type="button" id="confirm-text-btn" class="secondary-btn">Use This Text</button>
+                    <button type="button" id="retry-record-btn" class="secondary-btn danger-btn">Record Again</button>
+                </div>
             </div>
 
             <div class="row">
@@ -144,7 +270,7 @@
             </div>
         </div>
 
-        <div class="history">
+        <div class="history" style="display:none;">
             <h2>📜 History (Saved in Neon DB)</h2>
             <div id="history-container"><p class="history-empty">Loading history...</p></div>
         </div>
@@ -158,6 +284,32 @@
         const textInput = document.getElementById('text-input');
         const charCounter = document.getElementById('char-counter');
         const statusEl = document.getElementById('status');
+        const voicePreview = document.getElementById('voice-preview');
+        const reviewText = document.getElementById('review-text');
+        const recordBtn = document.getElementById('record-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const micStatusEl = document.getElementById('mic-status');
+        const micStatusLabel = document.getElementById('mic-status-label');
+        const waveformBars = Array.from(document.querySelectorAll('.wave-bar'));
+
+        let recognition = null;
+        let currentMode = 'text';
+        let activeMediaRecorder = null;
+        let activeChunks = [];
+        let activeStream = null;
+        let audioMonitoring = null;
+        let speechDetected = false;
+
+        const speechLocaleMap = {
+            en: 'en-US',
+            es: 'es-ES',
+            fr: 'fr-FR',
+            de: 'de-DE',
+            ja: 'ja-JP',
+            hi: 'hi-IN',
+            ta: 'ta-IN',
+            ml: 'ml-IN'
+        };
 
         // Live character counter
         textInput.addEventListener('input', () => {
@@ -170,6 +322,359 @@
             statusEl.className = `status show ${type}`;
             statusEl.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + message;
         }
+
+        function updateMicStatus(state, label) {
+            micStatusEl.classList.remove('idle', 'listening', 'error');
+            micStatusEl.classList.add(state);
+            micStatusLabel.textContent = label;
+        }
+
+        function setRecordButtonState(isRecording) {
+            recordBtn.classList.toggle('recording', isRecording);
+            recordBtn.classList.toggle('idle', !isRecording);
+            const label = isRecording ? 'Recording...' : 'Start Recording';
+            recordBtn.innerHTML = `<span class="record-dot"></span><span>${label}</span>`;
+        }
+
+        function setButtonListeningState(isVoiceDetected) {
+            const active = Boolean(isVoiceDetected);
+            recordBtn.classList.toggle('recording', active);
+            recordBtn.classList.toggle('idle', !active);
+            const label = active ? 'Listening...' : 'Start Recording';
+            recordBtn.innerHTML = `<span class="record-dot"></span><span>${label}</span>`;
+            const statusLabel = document.getElementById('record-status-label');
+            if (statusLabel) {
+                statusLabel.textContent = active ? 'Listening' : 'Silent';
+                statusLabel.style.color = active ? '#166534' : '#64748b';
+            }
+        }
+
+        function getSpeechRecognitionLocale(langCode) {
+            return speechLocaleMap[langCode] || 'en-US';
+        }
+
+        function updateWaveform(level) {
+            const amplitude = Math.max(0, Math.min(1, level));
+            const shouldAnimate = amplitude > 0.12;
+
+            waveformBars.forEach((bar, index) => {
+                const wave = shouldAnimate
+                    ? Math.max(24, Math.min(100, (Math.abs(Math.sin((index + 1) * 1.4 + amplitude * 7)) * 75) + (amplitude * 80)))
+                    : 8;
+                bar.style.height = `${wave}%`;
+                bar.style.opacity = shouldAnimate ? '1' : '0.25';
+            });
+        }
+
+        function setWaveformIdle() {
+            waveformBars.forEach((bar) => {
+                bar.style.height = '8%';
+                bar.style.opacity = '0.25';
+            });
+        }
+
+        function setWaveformActive() {
+            waveformBars.forEach((bar, index) => {
+                const height = 22 + ((index % 6) * 12) + (Math.sin(index + Date.now() / 120) + 1) * 18;
+                bar.style.height = `${Math.min(100, height)}%`;
+                bar.style.opacity = '1';
+            });
+        }
+
+        function showReviewPanel(transcript) {
+            reviewText.value = transcript;
+            document.getElementById('review-panel').classList.remove('hidden');
+            textInput.value = transcript;
+            voicePreview.value = transcript;
+            const len = textInput.value.length;
+            charCounter.innerText = `${len} / ${MAX_CHARS}`;
+            charCounter.classList.toggle('limit', len >= MAX_CHARS);
+        }
+
+        function setInputMode(mode) {
+            currentMode = mode;
+            const textPanel = document.getElementById('text-panel');
+            const recordPanel = document.getElementById('record-panel');
+            const optionButtons = document.querySelectorAll('.toggle-option');
+
+            optionButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.mode === mode);
+            });
+
+            textPanel.classList.toggle('hidden', mode !== 'text');
+            recordPanel.classList.toggle('hidden', mode !== 'record');
+
+            if (mode === 'record') {
+                textInput.value = voicePreview.value || textInput.value;
+            }
+        }
+
+        document.querySelectorAll('.toggle-option').forEach((button) => {
+            button.addEventListener('click', () => setInputMode(button.dataset.mode));
+        });
+
+        function startVoiceRecognition() {
+            const selectedLang = document.getElementById('lang-select').value;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            setButtonListeningState(false);
+
+            if (SpeechRecognition) {
+                if (recognition) {
+                    recognition.stop();
+                }
+
+                recognition = new SpeechRecognition();
+                recognition.lang = getSpeechRecognitionLocale(selectedLang);
+                recognition.interimResults = true;
+                recognition.continuous = true;
+
+                recognition.onstart = () => {
+                    setWaveformIdle();
+                    setButtonListeningState(false);
+                    setStatus('loading', '🎙️ Listening... Speak now.');
+                    updateMicStatus('listening', 'Listening');
+                    recordBtn.disabled = true;
+                    stopBtn.classList.remove('hidden');
+                };
+
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = 0; i < event.results.length; i++) {
+                        transcript += event.results[i][0].transcript;
+                    }
+
+                    const finalText = transcript.trim();
+                    setButtonListeningState(Boolean(finalText));
+                    if (finalText) {
+                        setWaveformActive();
+                    } else {
+                        setWaveformIdle();
+                    }
+                    voicePreview.value = finalText;
+                    textInput.value = finalText;
+
+                    const len = textInput.value.length;
+                    charCounter.innerText = `${len} / ${MAX_CHARS}`;
+                    charCounter.classList.toggle('limit', len >= MAX_CHARS);
+                };
+
+                recognition.onerror = (event) => {
+                    const message = event.error === 'not-allowed'
+                        ? '🎙️ Microphone access was denied. Please allow it and try again.'
+                        : '❌ Voice recognition failed. Please try again.';
+                    setStatus('error', message);
+                    updateMicStatus('error', 'Mic blocked');
+                    recordBtn.disabled = false;
+                    stopBtn.classList.add('hidden');
+                };
+
+                recognition.onend = () => {
+                    setWaveformIdle();
+                    setButtonListeningState(false);
+                    recordBtn.disabled = false;
+                    stopBtn.classList.add('hidden');
+                    updateMicStatus('idle', 'Mic idle');
+                    if (textInput.value.trim()) {
+                        setStatus('success', '✅ Voice text captured. You can generate the audio now.');
+                    }
+                };
+
+                recognition.start();
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setStatus('error', '❌ Voice input is not supported in this browser. Please use type text instead.');
+                updateMicStatus('error', 'Mic unavailable');
+                return;
+            }
+
+            if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
+                activeMediaRecorder.stop();
+                return;
+            }
+
+            activeChunks = [];
+            setWaveformIdle();
+            updateMicStatus('idle', 'Waiting for speech');
+
+            navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            })
+                .then((stream) => {
+                    activeStream = stream;
+                    const audioContext = new AudioContext();
+                    const analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    analyser.fftSize = 2048;
+                    analyser.smoothingTimeConstant = 0.2;
+                    source.connect(analyser);
+                    const floatData = new Float32Array(analyser.fftSize);
+
+                    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? 'audio/webm;codecs=opus'
+                        : 'audio/webm';
+                    activeMediaRecorder = new MediaRecorder(stream, { mimeType });
+
+                    activeMediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            activeChunks.push(event.data);
+                        }
+                    };
+
+                    const soundThreshold = 0.12;
+                    const detectSpeech = () => {
+                        analyser.getFloatTimeDomainData(floatData);
+                        let sumSquares = 0;
+                        let peak = 0;
+
+                        for (let i = 0; i < floatData.length; i++) {
+                            const sample = floatData[i];
+                            const absValue = Math.abs(sample);
+                            peak = Math.max(peak, absValue);
+                            sumSquares += sample * sample;
+                        }
+
+                        const rms = Math.sqrt(sumSquares / floatData.length);
+                        const volume = Math.min(1, rms * 25 + peak * 8);
+                        const voiceActive = volume > soundThreshold;
+
+                        updateWaveform(volume);
+                        setButtonListeningState(voiceActive);
+                        updateMicStatus(voiceActive ? 'listening' : 'idle', voiceActive ? 'Speech detected' : 'Waiting for speech');
+
+                        requestAnimationFrame(detectSpeech);
+                    };
+
+                    activeMediaRecorder.start();
+                    setWaveformIdle();
+                    setButtonListeningState(false);
+                    setStatus('loading', '🎙️ Recording live voice... click Stop when done.');
+                    updateMicStatus('idle', 'Waiting for speech');
+                    recordBtn.disabled = true;
+                    stopBtn.classList.remove('hidden');
+
+                    activeMediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(activeChunks, { type: mimeType });
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.webm');
+                        formData.append('lang', getSpeechRecognitionLocale(selectedLang));
+
+                        setStatus('loading', '🎙️ Processing voice recording...');
+                        updateMicStatus('listening', 'Transcribing');
+
+                        try {
+                            const response = await fetch(`${API_URL}/transcribe-audio`, {
+                                method: 'POST',
+                                body: formData,
+                            });
+
+                            const data = await response.json();
+
+                            if (!response.ok || !data.success) {
+                                throw new Error(data.detail || data.error || 'Voice transcription failed.');
+                            }
+
+                            const transcript = data.transcript || '';
+                            voicePreview.value = transcript;
+                            reviewText.value = transcript;
+                            textInput.value = transcript;
+                            const len = textInput.value.length;
+                            charCounter.innerText = `${len} / ${MAX_CHARS}`;
+                            charCounter.classList.toggle('limit', len >= MAX_CHARS);
+                            setStatus('success', '✅ Recording captured and transcribed. Review it, then generate the final audio.');
+                            updateMicStatus('idle', 'Mic idle');
+                            document.getElementById('review-panel').classList.remove('hidden');
+                        } catch (error) {
+                            setStatus('error', '❌ Failed to transcribe the recording. Please try again.');
+                            updateMicStatus('error', 'Transcription failed');
+                        } finally {
+                            if (activeStream) {
+                                activeStream.getTracks().forEach(track => track.stop());
+                                activeStream = null;
+                            }
+                            if (audioMonitoring) {
+                                cancelAnimationFrame(audioMonitoring);
+                                audioMonitoring = null;
+                            }
+                            if (audioContext.state !== 'closed') {
+                                audioContext.close();
+                            }
+                            activeMediaRecorder = null;
+                            setButtonListeningState(false);
+                            recordBtn.disabled = false;
+                            stopBtn.classList.add('hidden');
+                        }
+                    };
+
+                    audioMonitoring = requestAnimationFrame(detectSpeech);
+                    setStatus('loading', '🎙️ Waiting for human speech...');
+                    updateMicStatus('idle', 'Waiting for speech');
+                })
+                .catch(() => {
+                    setStatus('error', '🎙️ Microphone access was denied. Please allow access and try again.');
+                    updateMicStatus('error', 'Mic blocked');
+                    recordBtn.disabled = false;
+                    stopBtn.classList.add('hidden');
+                });
+        }
+
+        document.getElementById('confirm-text-btn').addEventListener('click', () => {
+            const confirmedText = reviewText.value.trim();
+            if (!confirmedText) {
+                setStatus('error', 'Please review the transcript before continuing.');
+                return;
+            }
+            textInput.value = confirmedText;
+            voicePreview.value = confirmedText;
+            document.getElementById('review-panel').classList.add('hidden');
+            setStatus('success', '✅ Text confirmed. You can now generate the audio.');
+        });
+
+        document.getElementById('retry-record-btn').addEventListener('click', () => {
+            document.getElementById('review-panel').classList.add('hidden');
+            reviewText.value = '';
+            voicePreview.value = '';
+            textInput.value = '';
+            charCounter.innerText = `0 / ${MAX_CHARS}`;
+            charCounter.classList.remove('limit');
+            startVoiceRecognition();
+        });
+
+        recordBtn.addEventListener('click', startVoiceRecognition);
+        stopBtn.addEventListener('click', () => {
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+            }
+
+            setButtonListeningState(false);
+            setStatus('loading', '🛑 Stopping recording and preparing the audio...');
+
+            if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
+                activeMediaRecorder.stop();
+            }
+
+            if (audioMonitoring) {
+                cancelAnimationFrame(audioMonitoring);
+                audioMonitoring = null;
+            }
+            if (activeStream) {
+                activeStream.getTracks().forEach(track => track.stop());
+                activeStream = null;
+            }
+
+            updateWaveform(0);
+            setWaveformIdle();
+            setButtonListeningState(false);
+            updateMicStatus('idle', 'Mic idle');
+            recordBtn.disabled = false;
+            stopBtn.classList.add('hidden');
+        });
 
         document.getElementById('generate-btn').addEventListener('click', async () => {
             const text = textInput.value;
