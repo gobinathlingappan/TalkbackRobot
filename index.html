@@ -258,6 +258,13 @@
                         <option value="ca">Canadian</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="voice-profile">Voice profile</label>
+                    <select id="voice-profile">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
             </div>
 
             <div class="row">
@@ -307,6 +314,7 @@
         const stopBtn = document.getElementById('stop-btn');
         const outputStyle = document.getElementById('output-style');
         const backgroundVolume = document.getElementById('background-volume');
+        const voiceProfile = document.getElementById('voice-profile');
         const micStatusEl = document.getElementById('mic-status');
         const micStatusLabel = document.getElementById('mic-status-label');
         const waveformBars = Array.from(document.querySelectorAll('.wave-bar'));
@@ -410,8 +418,15 @@
             charCounter.classList.toggle('limit', len >= MAX_CHARS);
         }
 
-        async function mixBackground(audioUrl, style, volume) {
-            if (style === 'plain') return audioUrl;
+        async function mixBackground(audioUrl, style, volume, gender) {
+            const voiceRates = {
+                plain: { male: 0.92, female: 1.08 },
+                police: { male: 0.84, female: 1.02 },
+                fire: { male: 0.9, female: 1.06 },
+                ambulance: { male: 0.95, female: 1.04 }
+            };
+            const playbackRate = voiceRates[style]?.[gender] || 1;
+            if (style === 'plain' && playbackRate === 1) return audioUrl;
 
             const toneFiles = {
                 police: '/Tones/Police-siren-397963.mp3',
@@ -419,33 +434,37 @@
                 ambulance: '/Tones/Ambulance-siren-6108.mp3'
             };
             const toneUrl = toneFiles[style];
-            if (!toneUrl) return audioUrl;
+            if (!toneUrl && playbackRate === 1) return audioUrl;
 
             const audioContext = new AudioContext();
-            const [speechResponse, toneResponse] = await Promise.all([
-                fetch(audioUrl),
-                fetch(toneUrl)
-            ]);
+            const requests = [fetch(audioUrl)];
+            if (toneUrl) requests.push(fetch(toneUrl));
+            const [speechResponse, toneResponse] = await Promise.all(requests);
             const speechBuffer = await audioContext.decodeAudioData(await speechResponse.arrayBuffer());
-            const toneBuffer = await audioContext.decodeAudioData(await toneResponse.arrayBuffer());
-            const duration = speechBuffer.duration;
+            const toneBuffer = toneResponse
+                ? await audioContext.decodeAudioData(await toneResponse.arrayBuffer())
+                : null;
+            const duration = speechBuffer.duration / playbackRate;
             const offline = new OfflineAudioContext(1, Math.ceil(duration * 44100), 44100);
 
             const speechSource = offline.createBufferSource();
             const speechGain = offline.createGain();
             speechSource.buffer = speechBuffer;
+            speechSource.playbackRate.value = playbackRate;
             speechGain.gain.value = 1;
             speechSource.connect(speechGain).connect(offline.destination);
             speechSource.start();
 
-            const toneSource = offline.createBufferSource();
-            const toneGain = offline.createGain();
-            toneSource.buffer = toneBuffer;
-            toneSource.loop = true;
-            toneGain.gain.value = Number(volume);
-            toneSource.connect(toneGain).connect(offline.destination);
-            toneSource.start();
-            toneSource.stop(duration);
+            if (toneBuffer) {
+                const toneSource = offline.createBufferSource();
+                const toneGain = offline.createGain();
+                toneSource.buffer = toneBuffer;
+                toneSource.loop = true;
+                toneGain.gain.value = Number(volume);
+                toneSource.connect(toneGain).connect(offline.destination);
+                toneSource.start();
+                toneSource.stop(duration);
+            }
 
             const rendered = await offline.startRendering();
             const wavBlob = audioBufferToWav(rendered);
@@ -766,6 +785,7 @@
             const accent = document.getElementById('accent-select').value;
             const style = outputStyle.value;
             const volume = backgroundVolume.value;
+            const gender = voiceProfile.value;
             const btn = document.getElementById('generate-btn');
 
             if (!text.trim()) { setStatus('error', 'Please enter some text!'); return; }
@@ -788,7 +808,7 @@
                         `${data.originalText} <span class="arrow">→</span> ${data.translatedText} <em>(${lang})</em>`;
                     const player = document.getElementById('audio-player');
                     setStatus('loading', style === 'plain' ? 'Preparing audio...' : 'Mixing the selected background...');
-                    player.src = await mixBackground(data.audioUrl, style, volume);
+                    player.src = await mixBackground(data.audioUrl, style, volume, gender);
                     document.getElementById('result-container').style.display = 'block';
                     player.play();
 
