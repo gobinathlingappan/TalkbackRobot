@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text to Speech Generator</title>
+    <title>Speech Generator</title>
     <style>
         :root {
-            --card: #ffffff;
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --text: #1e293b;
-            --muted: #64748b;
-            --border: #e2e8f0;
-            --success: #16a34a;
-            --danger: #dc2626;
+            --card: #151c27;
+            --surface: #090f18;
+            --primary: #4aa58f;
+            --primary-dark: #35806e;
+            --text: #f5f7fb;
+            --muted: #91a8cf;
+            --border: #2a3b56;
+            --success: #4fbd9c;
+            --danger: #ef6b73;
         }
         * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+            font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
             margin: 0;
             padding: 40px 16px;
             min-height: 100vh;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            background: radial-gradient(circle at 15% 0%, #182538 0%, transparent 38%), #080d14;
             color: var(--text);
             line-height: 1.6;
         }
@@ -30,9 +31,9 @@
             background: var(--card);
             padding: 28px;
             border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.35);
         }
-        h1 { margin: 0 0 4px; font-size: 26px; }
+        h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: .01em; }
         .subtitle { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
         .form-group { margin-bottom: 18px; }
         label {
@@ -44,17 +45,17 @@
         textarea, select {
             width: 100%; padding: 12px 14px; font-size: 15px;
             border: 1px solid var(--border); border-radius: 10px;
-            font-family: inherit; background: #f8fafc; transition: border-color .15s, box-shadow .15s;
+            font-family: inherit; background: var(--surface); color: var(--text); transition: border-color .15s, box-shadow .15s;
         }
         textarea:focus, select:focus {
             outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99,102,241,.15); background: #fff;
+            box-shadow: 0 0 0 3px rgba(74,165,143,.18); background: #0c1420;
         }
         textarea { resize: vertical; }
         .row { display: flex; gap: 14px; }
         .row .form-group { flex: 1; }
         .toggle-group {
-            display: flex; gap: 10px; background: #eef2ff; border-radius: 12px; padding: 6px;
+            display: flex; gap: 10px; background: #0c1420; border-radius: 12px; padding: 6px;
             border: 1px solid #dbeafe;
         }
         .toggle-option {
@@ -62,7 +63,7 @@
             padding: 10px 12px; border-radius: 10px; font-weight: 600; cursor: pointer;
         }
         .toggle-option.active {
-            background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(99,102,241,.18);
+            background: var(--primary); color: #07120f; box-shadow: 0 6px 16px rgba(74,165,143,.18);
         }
         .hidden { display: none !important; }
         .record-actions {
@@ -70,9 +71,9 @@
         }
         .secondary-btn {
             width: auto; min-width: 120px; padding: 11px 14px; font-size: 14px; border: 1px solid var(--border);
-            background: #fff; color: var(--text); border-radius: 10px; cursor: pointer;
+            background: #182334; color: var(--text); border-radius: 10px; cursor: pointer;
         }
-        .secondary-btn:hover:not(:disabled) { background: #f8fafc; }
+        .secondary-btn:hover:not(:disabled) { background: #22324a; }
         .record-button {
             display: inline-flex; align-items: center; justify-content: center; gap: 12px;
             min-width: 220px; min-height: 64px; padding: 18px 22px; font-size: 18px;
@@ -105,10 +106,10 @@
         }
         .waveform {
             display: flex; align-items: end; gap: 4px; height: 50px; margin: 10px 0 14px; padding: 8px 10px;
-            border: 1px solid var(--border); border-radius: 10px; background: #f8fafc;
+            border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
         }
         .wave-bar {
-            display: block; width: 7px; border-radius: 999px; background: linear-gradient(180deg, #c7d2fe 0%, #6366f1 100%);
+            display: block; width: 7px; border-radius: 999px; background: linear-gradient(180deg, #78d4b8 0%, #31866f 100%);
             min-height: 8px; transition: height .12s ease, opacity .12s ease;
         }
         .mic-status {
@@ -117,13 +118,13 @@
             letter-spacing: .02em; text-transform: uppercase; width: fit-content; border: 1px solid var(--border);
         }
         .mic-status.idle {
-            background: #f8fafc; color: var(--muted);
+            background: #101a28; color: var(--muted);
         }
         .mic-status.listening {
-            background: #dcfce7; color: var(--success); border-color: rgba(34,197,94,.2);
+            background: #123428; color: var(--success); border-color: rgba(79,189,156,.25);
         }
         .mic-status.error {
-            background: #fee2e2; color: var(--danger); border-color: rgba(220,38,38,.15);
+            background: #3a1d28; color: var(--danger); border-color: rgba(239,107,115,.2);
         }
         .mic-dot {
             width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; display: inline-block;
@@ -138,19 +139,19 @@
         }
         button {
             width: 100%; padding: 13px; font-size: 16px; font-weight: 600;
-            background: var(--primary); color: #fff; border: none;
+            background: var(--primary); color: #07120f; border: none;
             border-radius: 10px; cursor: pointer; transition: background .15s;
         }
         button:hover:not(:disabled) { background: var(--primary-dark); }
-        button:disabled { background: #c7d2fe; cursor: not-allowed; }
+        button:disabled { background: #41665e; cursor: not-allowed; }
         .status {
             margin-top: 16px; padding: 12px 14px; border-radius: 10px;
             font-size: 14px; font-weight: 500; display: none; align-items: center; gap: 8px;
         }
         .status.show { display: flex; }
-        .status.loading { background: #eef2ff; color: var(--primary-dark); }
-        .status.success { background: #dcfce7; color: var(--success); }
-        .status.error { background: #fee2e2; color: var(--danger); }
+        .status.loading { background: #10252a; color: #8ed4c1; }
+        .status.success { background: #123428; color: var(--success); }
+        .status.error { background: #3a1d28; color: var(--danger); }
         .spinner {
             width: 16px; height: 16px; border: 2px solid #c7d2fe;
             border-top-color: var(--primary-dark); border-radius: 50%;
@@ -178,8 +179,8 @@
 <body>
     <div class="container">
         <div class="card">
-            <h1>🗣️ Text to Speech Generator</h1>
-            <p class="subtitle">Type in any language, choose an output language &amp; accent, and listen.</p>
+            <h1>Speech Generator</h1>
+            <p class="subtitle">Create a spoken message and choose the desired output options to play.</p>
 
             <div class="form-group">
                 <label for="input-mode">Input Method</label>
@@ -259,6 +260,22 @@
                 </div>
             </div>
 
+            <div class="row">
+                <div class="form-group">
+                    <label for="output-style">Audio output</label>
+                    <select id="output-style">
+                        <option value="plain">Voice only</option>
+                        <option value="police">Police officer + radio background</option>
+                        <option value="fire">Fire service + alert background</option>
+                        <option value="ambulance">Ambulance + siren background</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="background-volume">Background volume</label>
+                    <input id="background-volume" type="range" min="0" max="0.35" step="0.01" value="0.12" aria-label="Background volume">
+                </div>
+            </div>
+
             <button id="generate-btn">Generate Audio</button>
 
             <div id="status" class="status"></div>
@@ -288,6 +305,8 @@
         const reviewText = document.getElementById('review-text');
         const recordBtn = document.getElementById('record-btn');
         const stopBtn = document.getElementById('stop-btn');
+        const outputStyle = document.getElementById('output-style');
+        const backgroundVolume = document.getElementById('background-volume');
         const micStatusEl = document.getElementById('mic-status');
         const micStatusLabel = document.getElementById('mic-status-label');
         const waveformBars = Array.from(document.querySelectorAll('.wave-bar'));
@@ -389,6 +408,71 @@
             const len = textInput.value.length;
             charCounter.innerText = `${len} / ${MAX_CHARS}`;
             charCounter.classList.toggle('limit', len >= MAX_CHARS);
+        }
+
+        async function mixBackground(audioUrl, style, volume) {
+            if (style === 'plain') return audioUrl;
+
+            const toneFiles = {
+                police: '/Tones/Police-siren-397963.mp3',
+                fire: '/Tones/Fire-truck-siren-sound-effect-521118.mp3',
+                ambulance: '/Tones/Ambulance-siren-6108.mp3'
+            };
+            const toneUrl = toneFiles[style];
+            if (!toneUrl) return audioUrl;
+
+            const audioContext = new AudioContext();
+            const [speechResponse, toneResponse] = await Promise.all([
+                fetch(audioUrl),
+                fetch(toneUrl)
+            ]);
+            const speechBuffer = await audioContext.decodeAudioData(await speechResponse.arrayBuffer());
+            const toneBuffer = await audioContext.decodeAudioData(await toneResponse.arrayBuffer());
+            const duration = speechBuffer.duration;
+            const offline = new OfflineAudioContext(1, Math.ceil(duration * 44100), 44100);
+
+            const speechSource = offline.createBufferSource();
+            const speechGain = offline.createGain();
+            speechSource.buffer = speechBuffer;
+            speechGain.gain.value = 1;
+            speechSource.connect(speechGain).connect(offline.destination);
+            speechSource.start();
+
+            const toneSource = offline.createBufferSource();
+            const toneGain = offline.createGain();
+            toneSource.buffer = toneBuffer;
+            toneSource.loop = true;
+            toneGain.gain.value = Number(volume);
+            toneSource.connect(toneGain).connect(offline.destination);
+            toneSource.start();
+            toneSource.stop(duration);
+
+            const rendered = await offline.startRendering();
+            const wavBlob = audioBufferToWav(rendered);
+            await audioContext.close();
+            return URL.createObjectURL(wavBlob);
+        }
+
+        function audioBufferToWav(audioBuffer) {
+            const channel = audioBuffer.getChannelData(0);
+            const buffer = new ArrayBuffer(44 + channel.length * 2);
+            const view = new DataView(buffer);
+            const write = (offset, value) => [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
+            write(0, 'RIFF');
+            view.setUint32(4, 36 + channel.length * 2, true);
+            write(8, 'WAVE');
+            write(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, audioBuffer.sampleRate, true);
+            view.setUint32(28, audioBuffer.sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            write(36, 'data');
+            view.setUint32(40, channel.length * 2, true);
+            channel.forEach((sample, index) => view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample)) * 0x7fff, true));
+            return new Blob([view], { type: 'audio/wav' });
         }
 
         function setInputMode(mode) {
@@ -680,6 +764,8 @@
             const text = textInput.value;
             const lang = document.getElementById('lang-select').value;
             const accent = document.getElementById('accent-select').value;
+            const style = outputStyle.value;
+            const volume = backgroundVolume.value;
             const btn = document.getElementById('generate-btn');
 
             if (!text.trim()) { setStatus('error', 'Please enter some text!'); return; }
@@ -701,7 +787,8 @@
                     document.getElementById('result-text').innerHTML =
                         `${data.originalText} <span class="arrow">→</span> ${data.translatedText} <em>(${lang})</em>`;
                     const player = document.getElementById('audio-player');
-                    player.src = data.audioUrl;
+                    setStatus('loading', style === 'plain' ? 'Preparing audio...' : 'Mixing the selected background...');
+                    player.src = await mixBackground(data.audioUrl, style, volume);
                     document.getElementById('result-container').style.display = 'block';
                     player.play();
 
